@@ -41,6 +41,45 @@ def inline_f32(arr):
     )
 
 
+
+# Example queries for the viewer's empty state: the most prototypical chip of
+# each class (highest class fraction, mostly-clear), so a first-time visitor
+# can see a good result in one click.
+EXAMPLE_CLASSES = [
+    ("vegetation", "Vegetation"),
+    ("water", "Water"),
+    ("bright", "Salt flat"),
+    ("snow_ice", "Snow & ice"),
+    ("barren", "Desert & bare rock"),
+]
+
+
+def pick_examples(aux, chips):
+    classes = aux["classes"]
+    frac = np.array(aux["chip_class_frac"], dtype=float)
+    bad = np.array([c["bad_frac"] for c in chips])
+    plume = np.array([c["plume"] for c in chips])
+    used_scenes, out = set(), []
+    for key, label in EXAMPLE_CLASSES:
+        if key not in classes:
+            continue
+        col = frac[:, classes.index(key)].copy()
+        col[bad > 0.02] = -1
+        for i in np.argsort(-col):
+            if col[i] <= 0:
+                break
+            if chips[i]["scene"] in used_scenes:
+                continue
+            used_scenes.add(chips[i]["scene"])
+            out.append({"i": int(i), "label": label})
+            break
+    plume_idx = np.where(plume & (bad <= 0.1))[0]
+    if len(plume_idx):
+        best = plume_idx[np.argmin(bad[plume_idx])]
+        out.append({"i": int(best), "label": "Methane site"})
+    return out
+
+
 def load_optional_emb(path, n_chips, label):
     if not path.exists():
         return None
@@ -69,6 +108,7 @@ def main():
                 s["site"] = site_idx[aux["site_of_scene"][s["scene"]]]
                 for c in s["chips"]:
                     c["cls"] = cls_of[c["id"]].replace("_", " ")
+            meta["examples"] = pick_examples(aux, chips)
         else:
             print("NOTE: aux.json out of date — rerun build_v2.py; shipping without classes")
 
@@ -100,18 +140,22 @@ def main():
     (SITE / "meta.json").write_text(meta_json)
     (SITE / "spec.bin").write_bytes(emb.tobytes())
     (SITE / ".nojekyll").write_text("")
-    fetch_f32 = "new Float32Array(await (await fetch('{}')).arrayBuffer())"
+    # loadF32 returns null on a 404 or a truncated body, so a missing file
+    # degrades to "that ranking is unavailable" instead of a blank page
+    def fetch_f32(name, arr):
+        return f"await loadF32('{name}', {arr.shape[1]})"
+
     spec2_site = spec3_site = "null"
     if emb_v1 is not None:
         (SITE / "spec2.bin").write_bytes(emb_v1.tobytes())
-        spec2_site = fetch_f32.format("spec2.bin")
+        spec2_site = fetch_f32("spec2.bin", emb_v1)
     if emb_v2 is not None:
         (SITE / "spec3.bin").write_bytes(emb_v2.tobytes())
-        spec3_site = fetch_f32.format("spec3.bin")
+        spec3_site = fetch_f32("spec3.bin", emb_v2)
     site_html = render(
         template,
         "await (await fetch('meta.json')).json()",
-        fetch_f32.format("spec.bin"),
+        fetch_f32("spec.bin", emb),
         "id => 'thumbs/' + id + '.jpg'",
         spec2_site,
         spec3_site,

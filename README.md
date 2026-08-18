@@ -16,6 +16,20 @@ no server and no vector database.
 
 ---
 
+## Using it
+
+The page is three panes, left to right, in the order you use them:
+
+1. **Pick a scene** — every open Tanager scene, with a world map showing where they are.
+2. **Click a tile** — each covers 3.8 km of ground. Amber dots mark tiles near a published methane detection.
+3. **Read the results** — the tiles from elsewhere in the archive whose spectra most resemble yours, ranked, with both spectra plotted so you can see *why* they matched. Hover a result to overlay its curve; hover the chart to read values. Click a result to make it your new query and keep walking the archive.
+
+If you've never seen hyperspectral data before, the intro dialog explains the idea in a few sentences, and the empty state offers one-click example queries (vegetation, water, salt flat, snow, desert, methane site).
+
+Two controls shape the results: **hide the same place** (on by default — see near-duplicate suppression below) and **rank by**, which switches between the three descriptors and their fusion.
+
+---
+
 ## How it works
 
 Every scene is cut into 128×128-pixel chips (3.8 km at 30 m GSD), rejecting

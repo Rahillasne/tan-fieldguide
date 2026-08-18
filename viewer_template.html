@@ -1,5 +1,6 @@
 <title>Fieldguide Explorer</title>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
   /* Committed single-theme dark design: an imagery viewer. All colors explicit. */
   * { box-sizing: border-box; }
@@ -9,66 +10,89 @@
     font-family: "Avenir Next", Avenir, "Helvetica Neue", Arial, sans-serif;
     font-size: 14px;
     margin: 0;
-    min-height: 100vh;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
   .mono { font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace; }
+  button { font: inherit; color: inherit; }
 
+  /* ---- header ---- */
   header {
-    display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
-    padding: 14px 20px 12px;
+    flex: 0 0 auto;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 11px 18px;
     border-bottom: 1px solid #26292E;
     background: #16181C;
   }
-  header h1 { font-size: 17px; font-weight: 600; margin: 0; letter-spacing: 0.01em; }
-  header .sub { color: #9BA1A8; font-size: 12.5px; }
-  header .stats { margin-left: auto; color: #9BA1A8; font-size: 12px; font-family: "SF Mono", ui-monospace, Menlo, monospace; }
-
-  .app { display: grid; grid-template-columns: 270px 1fr; gap: 0; min-height: calc(100vh - 50px); }
-  @media (max-width: 900px) { .app { grid-template-columns: 1fr; } }
-
-  /* ---- left rail ---- */
-  aside {
-    border-right: 1px solid #26292E;
-    background: #16181C;
-    padding: 12px;
-    overflow-y: auto;
+  header h1 { font-size: 16px; font-weight: 600; margin: 0; letter-spacing: 0.01em; }
+  header .tag {
+    font-size: 12.5px; color: #9BA1A8;
+    padding-left: 12px; border-left: 1px solid #2E3238;
   }
-  #locator { width: 100%; border-radius: 4px; background: #101216; display: block; }
-  .rail-label {
-    font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase;
-    color: #7C838B; margin: 14px 2px 6px;
+  header .spacer { margin-left: auto; }
+  header .stats {
+    color: #7C838B; font-size: 11.5px;
     font-family: "SF Mono", ui-monospace, Menlo, monospace;
   }
+  .helpbtn {
+    background: #1B1E23; border: 1px solid #2E3238; border-radius: 5px;
+    padding: 4px 11px; font-size: 12.5px; cursor: pointer; color: #C9CDD2;
+  }
+  .helpbtn:hover { border-color: #4A5058; color: #E7E5E0; }
+
+  /* ---- 3-pane app; each pane scrolls on its own so nothing hides below a fold ---- */
+  .app {
+    flex: 1 1 auto; min-height: 0;
+    display: grid;
+    grid-template-columns: 252px 320px 1fr;
+  }
+  .pane { overflow-y: auto; padding: 12px 14px 24px; min-width: 0; }
+  .pane + .pane { border-left: 1px solid #26292E; }
+  #pane-scenes { background: #16181C; display: flex; flex-direction: column; overflow: hidden; }
+  #pane-scenes .scene-list-wrap { flex: 1 1 auto; min-height: 0; overflow-y: auto; margin: 0 -4px; padding: 0 4px; }
+  #pane-chips { background: #15171B; }
+
+  .step {
+    display: flex; align-items: baseline; gap: 7px;
+    margin: 2px 0 3px;
+  }
+  .step .n {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace;
+    font-size: 10.5px; font-weight: 600; color: #D95926;
+    border: 1px solid #52351F; border-radius: 3px;
+    padding: 0 5px; line-height: 16px;
+  }
+  .step h2 { font-size: 13px; font-weight: 600; margin: 0; color: #E7E5E0; }
+  .step-sub { font-size: 11.5px; color: #7C838B; margin: 0 0 10px; line-height: 1.45; }
+
+  /* ---- scenes rail ---- */
+  #locator { width: 100%; max-width: 224px; border-radius: 4px; background: #101216; display: block; margin-bottom: 12px; }
   .scene-card {
     width: 100%; text-align: left; display: block;
-    background: #1B1E23; color: #E7E5E0;
-    border: 1px solid #26292E; border-radius: 5px;
-    padding: 8px 10px; margin-bottom: 6px;
-    cursor: pointer; font: inherit;
+    background: #1B1E23; border: 1px solid #26292E; border-radius: 5px;
+    padding: 7px 9px; margin-bottom: 5px; cursor: pointer;
   }
   .scene-card:hover { border-color: #3B4048; }
-  .scene-card.sel { border-color: #D95926; }
-  .scene-card .sc-top { display: flex; gap: 8px; align-items: baseline; }
-  .scene-card .sc-date { font-weight: 600; font-size: 13px; }
-  .scene-card .sc-n { margin-left: auto; color: #9BA1A8; font-size: 11.5px; }
-  .scene-card .sc-loc { color: #9BA1A8; font-size: 11.5px; margin-top: 2px; }
+  .scene-card.sel { border-color: #D95926; background: #221C19; }
+  .scene-card .sc-top { display: flex; gap: 7px; align-items: baseline; }
+  .scene-card .sc-date { font-weight: 600; font-size: 12.5px; }
+  .scene-card .sc-n { margin-left: auto; color: #7C838B; font-size: 11px; }
+  .scene-card .sc-loc { color: #9BA1A8; font-size: 11px; margin-top: 1px; }
   .badge-ch4 {
-    display: inline-block; font-size: 10px; font-weight: 600;
+    display: inline-block; font-size: 9.5px; font-weight: 600;
     color: #16181C; background: #C98500;
-    border-radius: 3px; padding: 0 5px; letter-spacing: 0.04em;
+    border-radius: 3px; padding: 0 5px; letter-spacing: 0.03em;
   }
 
-  /* ---- main ---- */
-  .content { padding: 16px 20px 40px; overflow-x: hidden; }
-  h2 { font-size: 13px; font-weight: 600; margin: 0 0 10px; color: #C9CDD2; }
-  h2 .h2sub { color: #7C838B; font-weight: 400; }
-
-  .chip-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+  /* ---- chip grid ---- */
+  .chip-grid { display: flex; flex-wrap: wrap; gap: 5px; }
   .chip {
-    padding: 0; border: 2px solid transparent; border-radius: 4px;
+    padding: 0; border: 2px solid transparent; border-radius: 5px;
     background: none; cursor: pointer; position: relative; line-height: 0;
   }
-  .chip img { width: 92px; height: 92px; border-radius: 3px; display: block; }
+  .chip img { width: 82px; height: 82px; border-radius: 3px; display: block; }
   .chip:hover { border-color: #6E747C; }
   .chip.q { border-color: #D95926; }
   .chip .pl {
@@ -77,95 +101,206 @@
     background: #C98500; border: 1.5px solid #131518;
   }
 
-  /* ---- query panel ---- */
-  #query-panel { display: none; margin-bottom: 26px; }
-  #query-panel.on { display: block; }
-  .qp { display: grid; grid-template-columns: 200px 1fr; gap: 18px; }
-  @media (max-width: 1100px) { .qp { grid-template-columns: 1fr; } }
-  .q-side img { width: 192px; height: 192px; border-radius: 4px; border: 2px solid #D95926; }
-  .q-side .q-meta { font-size: 12px; color: #9BA1A8; margin-top: 8px; line-height: 1.5; }
-  .q-side .q-meta b { color: #E7E5E0; font-weight: 600; }
-  label.opt { display: flex; gap: 6px; align-items: center; color: #9BA1A8; font-size: 12px; margin-top: 10px; cursor: pointer; }
+  /* ---- results pane ---- */
+  .query-card {
+    display: flex; gap: 12px; align-items: flex-start;
+    background: #1B1E23; border: 1px solid #2E3238; border-radius: 6px;
+    padding: 10px; margin-bottom: 14px;
+  }
+  .query-card img { width: 96px; height: 96px; border-radius: 4px; border: 2px solid #D95926; display: block; }
+  .q-meta { font-size: 12px; color: #9BA1A8; line-height: 1.55; }
+  .q-meta b { color: #E7E5E0; font-weight: 600; font-size: 13px; }
+  .controls { margin-left: auto; display: flex; flex-direction: column; gap: 7px; align-items: flex-end; }
+  label.opt { display: flex; gap: 6px; align-items: center; color: #9BA1A8; font-size: 12px; cursor: pointer; }
+  select {
+    background: #16181C; color: #E7E5E0; border: 1px solid #2E3238;
+    border-radius: 4px; font: inherit; font-size: 12px; padding: 3px 5px;
+  }
 
-  .nb-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+  .nb-grid { display: flex; flex-wrap: wrap; gap: 7px; }
   .nb {
-    width: 106px; background: #1B1E23; border: 1px solid #26292E; border-radius: 5px;
-    padding: 5px; cursor: pointer; font: inherit; color: #E7E5E0; text-align: left;
+    width: 100px; background: #1B1E23; border: 1px solid #26292E; border-radius: 5px;
+    padding: 5px; cursor: pointer; text-align: left;
   }
   .nb:hover, .nb.hov { border-color: #3987E5; }
-  .nb img { width: 94px; height: 94px; border-radius: 3px; display: block; }
-  .nb .nb-sam { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 11px; margin-top: 4px; }
-  .nb .nb-meta { font-size: 10.5px; color: #9BA1A8; line-height: 1.4; }
+  .nb img { width: 88px; height: 88px; border-radius: 3px; display: block; }
+  .nb .nb-rank {
+    display: flex; align-items: baseline; gap: 5px; margin-top: 4px;
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 11px;
+  }
+  .nb .nb-rank .r { color: #3987E5; font-weight: 600; }
+  .nb .nb-rank .a { color: #7C838B; font-size: 10px; }
+  .nb .nb-meta { font-size: 10.5px; color: #9BA1A8; line-height: 1.4; margin-top: 2px; }
+  .nb .nb-cls { color: #C9CDD2; }
 
   /* ---- chart ---- */
-  .chartbox { margin-top: 18px; background: #16181C; border: 1px solid #26292E; border-radius: 6px; padding: 12px 14px 6px; }
-  .chart-head { display: flex; align-items: center; gap: 16px; }
-  .chart-head h2 { margin: 0; }
-  .legend { display: flex; gap: 14px; margin-left: auto; font-size: 12px; color: #C9CDD2; }
-  .legend .key { display: inline-block; width: 14px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 5px; }
-  #chart { width: 100%; height: 240px; display: block; cursor: crosshair; }
-  .chart-note { font-size: 11.5px; color: #7C838B; margin: 4px 2px 6px; }
+  .chartbox {
+    margin-top: 16px; background: #16181C; border: 1px solid #26292E;
+    border-radius: 6px; padding: 11px 13px 8px;
+  }
+  .chart-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+  .chart-head h3 { font-size: 13px; font-weight: 600; margin: 0; color: #E7E5E0; }
+  .legend { display: flex; gap: 13px; margin-left: auto; font-size: 11.5px; color: #C9CDD2; }
+  .legend .key { display: inline-block; width: 13px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 5px; }
+  #chart { width: 100%; height: 220px; display: block; cursor: crosshair; margin-top: 6px; }
+  .chart-note { font-size: 11px; color: #7C838B; margin: 2px 2px 4px; line-height: 1.5; }
 
-  .hint { color: #7C838B; font-size: 13px; margin: 8px 0 18px; }
+  /* ---- empty state ---- */
+  .empty {
+    border: 1px dashed #2E3238; border-radius: 8px;
+    padding: 22px; color: #9BA1A8; font-size: 13px; line-height: 1.6; max-width: 62ch;
+  }
+  .empty h3 { margin: 0 0 8px; font-size: 14px; color: #E7E5E0; font-weight: 600; }
+  .examples { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
+  .ex {
+    display: flex; align-items: center; gap: 7px;
+    background: #1B1E23; border: 1px solid #2E3238; border-radius: 6px;
+    padding: 5px 10px 5px 5px; font-size: 12.5px; cursor: pointer;
+  }
+  .ex:hover { border-color: #D95926; }
+  .ex img { width: 30px; height: 30px; border-radius: 3px; display: block; }
+
+  /* ---- intro overlay ---- */
+  .scrim {
+    position: fixed; inset: 0; background: rgba(9, 10, 12, 0.72);
+    display: none; align-items: center; justify-content: center; padding: 20px; z-index: 20;
+  }
+  .scrim.on { display: flex; }
+  .intro {
+    background: #1B1E23; border: 1px solid #343940; border-radius: 10px;
+    max-width: 560px; width: 100%; padding: 24px 26px;
+    max-height: 88vh; overflow-y: auto;
+  }
+  .intro h2 { margin: 0 0 10px; font-size: 19px; font-weight: 600; }
+  .intro p { margin: 0 0 14px; color: #C9CDD2; font-size: 13.5px; line-height: 1.65; }
+  .intro ol { margin: 0 0 16px; padding-left: 0; list-style: none; counter-reset: s; }
+  .intro li {
+    counter-increment: s; position: relative; padding-left: 30px;
+    margin-bottom: 9px; color: #C9CDD2; font-size: 13.5px; line-height: 1.5;
+  }
+  .intro li::before {
+    content: counter(s); position: absolute; left: 0; top: 0;
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 11px; font-weight: 600;
+    color: #D95926; border: 1px solid #52351F; border-radius: 3px;
+    width: 20px; text-align: center; line-height: 18px;
+  }
+  .startbtn {
+    background: #D95926; border: none; border-radius: 6px; color: #16181C;
+    font-weight: 600; font-size: 13.5px; padding: 9px 18px; cursor: pointer;
+  }
+  .startbtn:hover { background: #E76B38; }
+  .fineprint { font-size: 11.5px; color: #7C838B; margin: 14px 0 0; line-height: 1.55; }
+  .fineprint a { color: #C9CDD2; }
+  :focus-visible { outline: 2px solid #3987E5; outline-offset: 2px; }
+
+  /* ---- narrow screens: stack, allow page scroll ---- */
+  @media (max-width: 1080px) {
+    body { height: auto; overflow: visible; }
+    .app { grid-template-columns: 1fr; }
+    .pane { overflow-y: visible; }
+    .pane + .pane { border-left: none; border-top: 1px solid #26292E; }
+    #pane-scenes { display: block; overflow: visible; }
+    #pane-scenes .scene-list-wrap { max-height: 220px; overflow-y: auto; }
+  }
 </style>
 
 <header>
   <h1>Fieldguide</h1>
-  <span class="sub">Tanager-1 hyperspectral similarity — open CC-BY corpus, masked mean-spectrum descriptor (v0)</span>
+  <span class="tag">Search Tanager's hyperspectral archive by what the ground is made of</span>
+  <span class="spacer"></span>
   <span class="stats" id="stats"></span>
+  <button class="helpbtn" id="help-btn">? &nbsp;How this works</button>
 </header>
 
 <div class="app">
-  <aside>
-    <canvas id="locator" width="246" height="140"></canvas>
-    <div class="rail-label">Scenes</div>
-    <div id="scene-list"></div>
-  </aside>
+  <section class="pane" id="pane-scenes">
+    <div class="step"><span class="n">1</span><h2>Pick a scene</h2></div>
+    <p class="step-sub">Every open Tanager scene. Dots on the map are scene locations; orange is the one you're viewing.</p>
+    <canvas id="locator" width="224" height="128"></canvas>
+    <div class="scene-list-wrap"><div id="scene-list"></div></div>
+  </section>
 
-  <section class="content">
-    <div id="query-panel">
-      <h2>Spectral lookalikes <span class="h2sub" id="q-title"></span></h2>
-      <div class="qp">
-        <div class="q-side">
-          <img id="q-img" alt="query chip">
-          <div class="q-meta" id="q-meta"></div>
-          <label class="opt"><input type="checkbox" id="excl-scene" checked> exclude query site</label>
+  <section class="pane" id="pane-chips">
+    <div class="step"><span class="n">2</span><h2>Click a tile</h2></div>
+    <p class="step-sub" id="browse-sub"></p>
+    <div class="chip-grid" id="chip-grid"></div>
+  </section>
+
+  <section class="pane" id="pane-results">
+    <div class="step"><span class="n">3</span><h2>Spectral lookalikes</h2></div>
+    <p class="step-sub" id="results-sub">Tiles from elsewhere in the archive whose spectra most resemble the one you picked.</p>
+
+    <div id="empty-state" class="empty">
+      <h3>Nothing picked yet</h3>
+      Click any tile in the middle column, or jump straight in with one of these:
+      <div class="examples" id="examples"></div>
+    </div>
+
+    <div id="query-panel" style="display:none">
+      <div class="query-card">
+        <img id="q-img" alt="the tile you picked">
+        <div class="q-meta" id="q-meta"></div>
+        <div class="controls">
+          <label class="opt" title="Scenes whose centres are within ~35 km are treated as the same place. The archive revisits sites, so without this you mostly get the same ground on a different date.">
+            <input type="checkbox" id="excl-scene" checked> hide the same place
+          </label>
           <label class="opt" id="ranker-row" style="display:none">rank by
-            <select id="ranker" style="background:#1B1E23;color:#E7E5E0;border:1px solid #26292E;border-radius:4px;font:inherit;padding:2px 4px">
-              <option value="fusion">fusion (recommended)</option>
-              <option value="v2">composition (spectral words)</option>
-              <option value="v0">mean spectrum (SAM)</option>
-              <option value="v1">SpectralEarth (cosine)</option>
+            <select id="ranker">
+              <option value="fusion">all three combined</option>
+              <option value="v2">composition</option>
+              <option value="v0">mean spectrum</option>
+              <option value="v1">SpectralEarth model</option>
             </select>
           </label>
         </div>
-        <div>
-          <div class="nb-grid" id="nb-grid"></div>
-          <div class="chartbox">
-            <div class="chart-head">
-              <h2>Mean surface reflectance</h2>
-              <div class="legend">
-                <span><span class="key" style="background:#D95926"></span>query</span>
-                <span><span class="key" style="background:#3987E5"></span>neighbor (hover)</span>
-              </div>
-            </div>
-            <canvas id="chart"></canvas>
-            <div class="chart-note">Gaps are masked bands: deep water-vapor windows, order-sorting-filter seams (651–671, 1277–1307&nbsp;nm), O₂-A (~762&nbsp;nm), and a calibration artifact near 936&nbsp;nm.</div>
+      </div>
+
+      <div class="nb-grid" id="nb-grid"></div>
+
+      <div class="chartbox">
+        <div class="chart-head">
+          <h3>The spectra behind the match</h3>
+          <div class="legend">
+            <span><span class="key" style="background:#D95926"></span>your tile</span>
+            <span><span class="key" style="background:#3987E5"></span>hovered result</span>
           </div>
         </div>
+        <canvas id="chart"></canvas>
+        <p class="chart-note">Reflectance from 400 to 2450&nbsp;nm — hover a result above to overlay it, and hover the chart to read values. Similar shapes mean similar materials. The grey gaps are wavelengths thrown away on purpose: water-vapour windows plus known instrument artefacts, so matches reflect the ground and not the sensor.</p>
       </div>
     </div>
-
-    <h2 id="browse-title">Pick a chip to query</h2>
-    <p class="hint" id="browse-hint">Every 128×128 chip (3.8&nbsp;km at 30&nbsp;m) is described by its full 380–2500&nbsp;nm mean spectrum. Click one to find its spectral lookalikes across the corpus. Amber dots mark chips near open Carbon&nbsp;Mapper CH₄ plume detections.</p>
-    <div class="chip-grid" id="chip-grid"></div>
   </section>
 </div>
 
+<div class="scrim" id="scrim">
+  <div class="intro" role="dialog" aria-modal="true" aria-labelledby="intro-h">
+    <h2 id="intro-h">What am I looking at?</h2>
+    <p>Planet's Tanager-1 satellite doesn't take ordinary pictures. Every pixel it records is a <b>426-band spectrum</b> from 377 to 2500&nbsp;nm — closer to a fingerprint of what the ground is made of than to a colour photo. A normal browse image shows you about 15% of that.</p>
+    <p>You can normally only search this archive by date, place, and cloud cover. Fieldguide lets you search it by the spectra themselves:</p>
+    <ol>
+      <li><b>Pick a scene</b> from the list on the left.</li>
+      <li><b>Click a tile</b> in that scene — each one covers 3.8&nbsp;km of ground.</li>
+      <li><b>Read the results</b>: the tiles from anywhere else in the archive whose spectra look most like yours, with both curves plotted so you can see why.</li>
+    </ol>
+    <button class="startbtn" id="start-btn">Start exploring</button>
+    <p class="fineprint">Built on Planet's CC-BY Tanager open data. Amber dots mark tiles near published methane detections. Everything runs in your browser — no server, nothing uploaded.</p>
+  </div>
+</div>
+
 <script type="module">
+async function loadF32(url, d) {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const buf = await res.arrayBuffer();
+    if (!buf.byteLength || buf.byteLength % (4 * d)) return null;
+    return new Float32Array(buf);
+  } catch (e) { return null; }
+}
+
 const META = __DATA_META__;
 const thumbURL = __THUMB_FN__;
-const SPEC = __DATA_SPEC_EXPR__;
+const SPEC_RAW = __DATA_SPEC_EXPR__;
 const SPEC2 = __DATA_SPEC2_EXPR__;  // SpectralEarth token-mean embeddings (384-d) or null
 const D2 = 384;
 const SPEC3 = __DATA_SPEC3_EXPR__;  // spectral-words Hellinger histograms (64-d) or null
@@ -177,6 +312,11 @@ const D = GRID.length;
 const CHIPS = [];
 META.scenes.forEach((s, si) => s.chips.forEach(ch => CHIPS.push({ ...ch, si })));
 const N = CHIPS.length;
+
+// a missing/short spec.bin must not blank the page: fall back to zeros and
+// tell the user, rather than throwing at module top level
+const SPEC_OK = SPEC_RAW !== null;
+const SPEC = SPEC_OK ? SPEC_RAW : new Float32Array(N * D);
 
 // unit vectors for spectral-angle search
 const UNIT = new Float32Array(SPEC.length);
@@ -226,13 +366,16 @@ const SEGS = [];
 let curScene = 0, curQuery = null, hovered = null;
 
 const $ = id => document.getElementById(id);
-document.querySelector('#stats').textContent =
-  `${META.scenes.length} scenes · ${N} chips · ${D}-pt spectra`;
+$('stats').textContent = `${META.scenes.length} scenes · ${N} tiles · ${D}-point spectra`;
 
 // ---- locator ----
+let lastNbs = null;
 function drawLocator(nbs) {
   const cv = $('locator'), ctx = cv.getContext('2d');
-  const W = cv.width, H = cv.height;
+  const dpr = window.devicePixelRatio || 1;
+  const W = 224, H = 128;
+  cv.width = W * dpr; cv.height = H * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.fillStyle = '#101216'; ctx.fillRect(0, 0, W, H);
   ctx.strokeStyle = '#22262B'; ctx.lineWidth = 1;
   for (let lon = -180; lon <= 180; lon += 60) {
@@ -245,16 +388,19 @@ function drawLocator(nbs) {
   }
   const nbScenes = new Set();
   if (curQuery !== null)
-    (nbs || currentNeighbors()).forEach(n => nbScenes.add(CHIPS[n.j].si));
+    (nbs || lastNbs || []).forEach(n => nbScenes.add(CHIPS[n.j].si));
   META.scenes.forEach((s, si) => {
     const x = (s.lon + 180) / 360 * W, y = (90 - s.lat) / 180 * H;
-    ctx.beginPath(); ctx.arc(x, y, si === curScene ? 4.5 : 3, 0, 7);
+    ctx.beginPath(); ctx.arc(x, y, si === curScene ? 4 : 2.6, 0, 7);
     ctx.fillStyle = si === curScene ? '#D95926' : (nbScenes.has(si) ? '#3987E5' : '#6E747C');
     ctx.fill();
   });
 }
 
 // ---- scene list ----
+function fmtLatLon(lat, lon) {
+  return `${Math.abs(lat).toFixed(1)}°${lat < 0 ? 'S' : 'N'} ${Math.abs(lon).toFixed(1)}°${lon < 0 ? 'W' : 'E'}`;
+}
 function renderSceneList() {
   const el = $('scene-list');
   el.innerHTML = '';
@@ -263,26 +409,29 @@ function renderSceneList() {
     b.className = 'scene-card' + (si === curScene ? ' sel' : '');
     b.innerHTML = `<span class="sc-top"><span class="sc-date">${s.date}</span>` +
       (s.has_plume_data ? '<span class="badge-ch4">CH₄</span>' : '') +
-      `<span class="sc-n">${s.chips.length} chips</span></span>` +
-      `<span class="sc-loc mono">${fmtLatLon(s.lat, s.lon)} · ${s.time}</span>`;
-    b.onclick = () => { curScene = si; renderSceneList(); renderChipGrid(); drawLocator(); };
+      `<span class="sc-n">${s.chips.length} tiles</span></span>` +
+      `<span class="sc-loc mono">${fmtLatLon(s.lat, s.lon)}</span>`;
+    b.onclick = () => {
+      curScene = si; renderSceneList(); renderChipGrid(); drawLocator();
+      $('pane-chips').scrollTop = 0;
+    };
     el.appendChild(b);
   });
-}
-function fmtLatLon(lat, lon) {
-  return `${Math.abs(lat).toFixed(1)}°${lat < 0 ? 'S' : 'N'} ${Math.abs(lon).toFixed(1)}°${lon < 0 ? 'W' : 'E'}`;
 }
 
 // ---- chip browse grid ----
 function renderChipGrid() {
   const s = META.scenes[curScene];
-  $('browse-title').textContent = `Scene ${s.scene} — ${s.date}, ${fmtLatLon(s.lat, s.lon)}`;
+  $('browse-sub').innerHTML =
+    `<b style="color:#C9CDD2">${s.chips.length} tiles</b> in the ${s.date} scene at ${fmtLatLon(s.lat, s.lon)}. ` +
+    `Each covers 3.8&nbsp;km. Amber dot = near a published methane detection.`;
   const el = $('chip-grid');
   el.innerHTML = '';
   CHIPS.forEach((ch, gi) => {
     if (ch.si !== curScene) return;
     const b = document.createElement('button');
     b.className = 'chip' + (gi === curQuery ? ' q' : '');
+    b.title = ch.cls ? `${ch.cls} · ${fmtLatLon(ch.lat, ch.lon)}` : fmtLatLon(ch.lat, ch.lon);
     b.innerHTML = `<img src="${thumbURL(ch.id)}" loading="lazy" alt="">` + (ch.plume ? '<span class="pl"></span>' : '');
     b.onclick = () => setQuery(gi);
     el.appendChild(b);
@@ -300,7 +449,7 @@ function currentNeighbors() {
     if (excl ? siteOf(CHIPS[j]) === siteOf(CHIPS[q]) : CHIPS[j].si === CHIPS[q].si) continue;
     cand.push(j);
   }
-  const bySam  = cand.map(j => ({ j, s: samDeg(q, j) })).sort((a, b) => a.s - b.s);
+  const bySam = cand.map(j => ({ j, s: samDeg(q, j) })).sort((a, b) => a.s - b.s);
   const rank = arr => { const r = new Map(); arr.forEach((e, i) => r.set(e.j, i)); return r; };
   let ordered;
   if (mode === 'v0' || (!UNIT2 && !UNIT3)) {
@@ -316,7 +465,7 @@ function currentNeighbors() {
     ordered = cand.map(j => ({ j, s: parts.reduce((t, r) => t + 1 / (60 + r.get(j)), 0) }))
                   .sort((a, b) => b.s - a.s);
   }
-  // diversity: at most 2 chips per scene in the top-12
+  // diversity: at most 2 tiles per scene in the top 12
   const perScene = new Map(), out = [], samOf = new Map(bySam.map(e => [e.j, e.s]));
   for (const { j } of ordered) {
     const si = CHIPS[j].si, n = perScene.get(si) || 0;
@@ -332,17 +481,26 @@ function setQuery(gi) {
   curQuery = gi;
   hovered = null;
   const ch = CHIPS[gi], s = META.scenes[ch.si];
-  $('query-panel').className = 'on';
+  if (ch.si !== curScene) {
+    curScene = ch.si;
+    renderSceneList();
+    $('pane-chips').scrollTop = 0;
+    const card = $('scene-list').children[curScene];
+    if (card) card.scrollIntoView({ block: 'nearest' });
+  }
+  $('empty-state').style.display = 'none';
+  $('query-panel').style.display = 'block';
   $('q-img').src = thumbURL(ch.id);
-  $('q-title').textContent = `for ${ch.id}`;
   $('q-meta').innerHTML =
-    `<b>${s.date}</b> ${s.time}<br>${fmtLatLon(ch.lat, ch.lon)}<br>` +
-    `valid ${(100 * (1 - ch.bad_frac)).toFixed(0)}%` +
-    (ch.cls ? ` · ${ch.cls}` : '') +
+    `<b>${ch.cls ? ch.cls[0].toUpperCase() + ch.cls.slice(1) : 'Tile'}</b><br>` +
+    `${fmtLatLon(ch.lat, ch.lon)}<br>${s.date} · ${s.time}<br>` +
+    `${(100 * (1 - ch.bad_frac)).toFixed(0)}% clear pixels` +
     (ch.plume ? '<br><span class="badge-ch4">near CH₄ plume</span>' : '');
   renderNeighbors();
   renderChipGrid();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  $('pane-results').scrollTop = 0;
+  if (window.matchMedia('(max-width: 1080px)').matches)
+    $('pane-results').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function renderNeighbors() {
@@ -350,16 +508,24 @@ function renderNeighbors() {
   const el = $('nb-grid');
   el.innerHTML = '';
   const nbs = currentNeighbors();
-  nbs.forEach(({ j, sam }) => {
+  lastNbs = nbs;
+  $('results-sub').innerHTML = nbs.length
+    ? 'Ranked most similar first, at most two per scene so one place cannot fill the list. '
+      + 'Click any result to make it the new query.'
+    : 'No results — try unchecking &ldquo;hide the same place&rdquo;.';
+  nbs.forEach(({ j, sam }, i) => {
     const ch = CHIPS[j], s = META.scenes[ch.si];
     const b = document.createElement('button');
     b.className = 'nb';
+    b.title = `${sam.toFixed(2)}° spectral angle from your tile — smaller means a closer match`;
     b.innerHTML = `<img src="${thumbURL(ch.id)}" loading="lazy" alt="">` +
-      `<div class="nb-sam">SAM ${sam.toFixed(2)}°${ch.plume ? ' <span class="badge-ch4">CH₄</span>' : ''}</div>` +
-      `<div class="nb-meta mono">${s.date} · ${ch.cls || ''}<br>${fmtLatLon(ch.lat, ch.lon)}</div>`;
+      `<div class="nb-rank"><span class="r">#${i + 1}</span><span class="a">${sam.toFixed(2)}° apart</span></div>` +
+      `<div class="nb-meta"><span class="nb-cls">${ch.cls || ''}</span>` +
+      (ch.plume ? ' <span class="badge-ch4">CH₄</span>' : '') +
+      `<br><span class="mono">${fmtLatLon(ch.lat, ch.lon)}</span></div>`;
     b.onmouseenter = () => { hovered = j; b.classList.add('hov'); drawChart(); };
     b.onmouseleave = () => { hovered = null; b.classList.remove('hov'); drawChart(); };
-    b.onclick = () => { curScene = CHIPS[j].si; renderSceneList(); setQuery(j); };
+    b.onclick = () => { setQuery(j); };
     el.appendChild(b);
   });
   drawChart();
@@ -379,12 +545,13 @@ let mouseK = null;
 function chartGeom(cv) {
   // CSS-pixel geometry; drawChart's P() is the only dpr multiplier
   const pad = { l: 46, r: 12, t: 10, b: 26 };
-  return { pad, w: cv.clientWidth - pad.l - pad.r, h: 240 - pad.t - pad.b };
+  return { pad, w: cv.clientWidth - pad.l - pad.r, h: 220 - pad.t - pad.b };
 }
 function drawChart() {
   const cv = $('chart');
+  if (!cv.clientWidth) return;
   const dpr = window.devicePixelRatio || 1;
-  cv.width = cv.clientWidth * dpr; cv.height = 240 * dpr;
+  cv.width = cv.clientWidth * dpr; cv.height = 220 * dpr;
   const ctx = cv.getContext('2d');
   const { pad, w, h } = chartGeom(cv);
   const P = v => v * dpr;
@@ -398,7 +565,6 @@ function drawChart() {
   const X = k => pad.l + (GRID[k] - 400) / (2450 - 400) * w;
   const Y = v => pad.t + h - v / ymax * h;
 
-  // recessive grid + axes text
   ctx.lineWidth = P(1); ctx.strokeStyle = '#22262B';
   ctx.fillStyle = '#7C838B';
   ctx.font = `${P(10)}px ui-monospace, Menlo, monospace`;
@@ -408,12 +574,17 @@ function drawChart() {
     ctx.beginPath(); ctx.moveTo(x, P(pad.t)); ctx.lineTo(x, P(pad.t + h)); ctx.stroke();
     ctx.fillText(nm, x, P(pad.t + h + 16));
   });
+  ctx.fillText('wavelength (nm)', P(pad.l + w / 2), P(pad.t + h + 25));
   ctx.textAlign = 'right';
   for (let i = 0; i <= 2; i++) {
     const v = ymax * i / 2, y = P(Y(v));
     ctx.beginPath(); ctx.moveTo(P(pad.l), y); ctx.lineTo(P(pad.l + w), y); ctx.stroke();
     ctx.fillText(v.toFixed(2), P(pad.l - 6), y + P(3));
   }
+  ctx.save();
+  ctx.translate(P(12), P(pad.t + h / 2)); ctx.rotate(-Math.PI / 2);
+  ctx.textAlign = 'center'; ctx.fillText('reflectance', 0, 0);
+  ctx.restore();
 
   // masked-window bands behind data
   ctx.fillStyle = 'rgba(124,131,139,0.10)';
@@ -442,7 +613,7 @@ function drawChart() {
     ctx.strokeStyle = '#4A5058'; ctx.lineWidth = P(1);
     ctx.beginPath(); ctx.moveTo(x, P(pad.t)); ctx.lineTo(x, P(pad.t + h)); ctx.stroke();
     const lines = [`${GRID[mouseK].toFixed(0)} nm`];
-    rows.forEach((i, ri) => lines.push(`${ri ? 'nbr' : 'qry'} ${SPEC[i * D + mouseK].toFixed(3)}`));
+    rows.forEach((i, ri) => lines.push(`${ri ? 'result' : 'yours'} ${SPEC[i * D + mouseK].toFixed(3)}`));
     ctx.font = `${P(11)}px ui-monospace, Menlo, monospace`;
     const tw = Math.max(...lines.map(t => ctx.measureText(t).width)) + P(14);
     const tx = Math.min(x + P(8), cv.width - tw - P(4));
@@ -474,12 +645,42 @@ $('chart').addEventListener('mousemove', e => {
 $('chart').addEventListener('mouseleave', () => { mouseK = null; drawChart(); });
 window.addEventListener('resize', drawChart);
 
-// ---- boot: preselect first plume chip (or chip 0) so the page opens live ----
-renderSceneList();
-drawLocator();
-{
-  let start = CHIPS.findIndex(c => c.plume);
-  if (start < 0) start = 0;
-  if (N) { curScene = CHIPS[start].si; renderSceneList(); renderChipGrid(); setQuery(start); }
+// ---- examples ----
+(META.examples || []).forEach(ex => {
+  const ch = CHIPS[ex.i];
+  if (!ch) return;
+  const b = document.createElement('button');
+  b.className = 'ex';
+  b.innerHTML = `<img src="${thumbURL(ch.id)}" alt=""> ${ex.label}`;
+  b.onclick = () => setQuery(ex.i);
+  $('examples').appendChild(b);
+});
+
+// ---- intro overlay ----
+const showIntro = on => {
+  $('scrim').className = on ? 'scrim on' : 'scrim';
+  if (on) {
+    $('start-btn').focus();
+  } else {
+    try { localStorage.setItem('fg-seen', '1'); } catch (e) {}
+    $('help-btn').focus();
+  }
+};
+$('help-btn').onclick = () => showIntro(true);
+$('start-btn').onclick = () => showIntro(false);
+$('scrim').onclick = e => { if (e.target === $('scrim')) showIntro(false); };
+document.addEventListener('keydown', e => { if (e.key === 'Escape') showIntro(false); });
+let seen = false;
+try { seen = localStorage.getItem('fg-seen') === '1'; } catch (e) {}
+if (!seen) showIntro(true);
+
+// ---- boot ----
+if (!SPEC_OK) {
+  $('empty-state').innerHTML =
+    '<h3>Could not load the index</h3>spec.bin failed to load, so similarity search is unavailable. ' +
+    'If you are hosting this yourself, check that the .bin files sit next to index.html.';
 }
+renderSceneList();
+renderChipGrid();
+drawLocator();
 </script>
