@@ -1,6 +1,8 @@
 MIT License
 
-Copyright (c) 2026 Planetrahil
+Copyright (c) 2026 Rahil Lasne
+
+Code in this repository is licensed under the MIT License.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,3 +21,9 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+Data notice: imagery-derived assets under docs/ (thumbnails, spectra,
+metadata) are derived from Planet Labs PBC Tanager-1 open data and are
+licensed CC-BY 4.0 with attribution to Planet Labs PBC.

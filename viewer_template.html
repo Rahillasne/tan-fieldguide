@@ -1,0 +1,485 @@
+<title>Fieldguide Explorer</title>
+<meta charset="utf-8">
+<style>
+  /* Committed single-theme dark design: an imagery viewer. All colors explicit. */
+  * { box-sizing: border-box; }
+  body {
+    background: #131518;
+    color: #E7E5E0;
+    font-family: "Avenir Next", Avenir, "Helvetica Neue", Arial, sans-serif;
+    font-size: 14px;
+    margin: 0;
+    min-height: 100vh;
+  }
+  .mono { font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace; }
+
+  header {
+    display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+    padding: 14px 20px 12px;
+    border-bottom: 1px solid #26292E;
+    background: #16181C;
+  }
+  header h1 { font-size: 17px; font-weight: 600; margin: 0; letter-spacing: 0.01em; }
+  header .sub { color: #9BA1A8; font-size: 12.5px; }
+  header .stats { margin-left: auto; color: #9BA1A8; font-size: 12px; font-family: "SF Mono", ui-monospace, Menlo, monospace; }
+
+  .app { display: grid; grid-template-columns: 270px 1fr; gap: 0; min-height: calc(100vh - 50px); }
+  @media (max-width: 900px) { .app { grid-template-columns: 1fr; } }
+
+  /* ---- left rail ---- */
+  aside {
+    border-right: 1px solid #26292E;
+    background: #16181C;
+    padding: 12px;
+    overflow-y: auto;
+  }
+  #locator { width: 100%; border-radius: 4px; background: #101216; display: block; }
+  .rail-label {
+    font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: #7C838B; margin: 14px 2px 6px;
+    font-family: "SF Mono", ui-monospace, Menlo, monospace;
+  }
+  .scene-card {
+    width: 100%; text-align: left; display: block;
+    background: #1B1E23; color: #E7E5E0;
+    border: 1px solid #26292E; border-radius: 5px;
+    padding: 8px 10px; margin-bottom: 6px;
+    cursor: pointer; font: inherit;
+  }
+  .scene-card:hover { border-color: #3B4048; }
+  .scene-card.sel { border-color: #D95926; }
+  .scene-card .sc-top { display: flex; gap: 8px; align-items: baseline; }
+  .scene-card .sc-date { font-weight: 600; font-size: 13px; }
+  .scene-card .sc-n { margin-left: auto; color: #9BA1A8; font-size: 11.5px; }
+  .scene-card .sc-loc { color: #9BA1A8; font-size: 11.5px; margin-top: 2px; }
+  .badge-ch4 {
+    display: inline-block; font-size: 10px; font-weight: 600;
+    color: #16181C; background: #C98500;
+    border-radius: 3px; padding: 0 5px; letter-spacing: 0.04em;
+  }
+
+  /* ---- main ---- */
+  .content { padding: 16px 20px 40px; overflow-x: hidden; }
+  h2 { font-size: 13px; font-weight: 600; margin: 0 0 10px; color: #C9CDD2; }
+  h2 .h2sub { color: #7C838B; font-weight: 400; }
+
+  .chip-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    padding: 0; border: 2px solid transparent; border-radius: 4px;
+    background: none; cursor: pointer; position: relative; line-height: 0;
+  }
+  .chip img { width: 92px; height: 92px; border-radius: 3px; display: block; }
+  .chip:hover { border-color: #6E747C; }
+  .chip.q { border-color: #D95926; }
+  .chip .pl {
+    position: absolute; top: 3px; right: 3px;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #C98500; border: 1.5px solid #131518;
+  }
+
+  /* ---- query panel ---- */
+  #query-panel { display: none; margin-bottom: 26px; }
+  #query-panel.on { display: block; }
+  .qp { display: grid; grid-template-columns: 200px 1fr; gap: 18px; }
+  @media (max-width: 1100px) { .qp { grid-template-columns: 1fr; } }
+  .q-side img { width: 192px; height: 192px; border-radius: 4px; border: 2px solid #D95926; }
+  .q-side .q-meta { font-size: 12px; color: #9BA1A8; margin-top: 8px; line-height: 1.5; }
+  .q-side .q-meta b { color: #E7E5E0; font-weight: 600; }
+  label.opt { display: flex; gap: 6px; align-items: center; color: #9BA1A8; font-size: 12px; margin-top: 10px; cursor: pointer; }
+
+  .nb-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+  .nb {
+    width: 106px; background: #1B1E23; border: 1px solid #26292E; border-radius: 5px;
+    padding: 5px; cursor: pointer; font: inherit; color: #E7E5E0; text-align: left;
+  }
+  .nb:hover, .nb.hov { border-color: #3987E5; }
+  .nb img { width: 94px; height: 94px; border-radius: 3px; display: block; }
+  .nb .nb-sam { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 11px; margin-top: 4px; }
+  .nb .nb-meta { font-size: 10.5px; color: #9BA1A8; line-height: 1.4; }
+
+  /* ---- chart ---- */
+  .chartbox { margin-top: 18px; background: #16181C; border: 1px solid #26292E; border-radius: 6px; padding: 12px 14px 6px; }
+  .chart-head { display: flex; align-items: center; gap: 16px; }
+  .chart-head h2 { margin: 0; }
+  .legend { display: flex; gap: 14px; margin-left: auto; font-size: 12px; color: #C9CDD2; }
+  .legend .key { display: inline-block; width: 14px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 5px; }
+  #chart { width: 100%; height: 240px; display: block; cursor: crosshair; }
+  .chart-note { font-size: 11.5px; color: #7C838B; margin: 4px 2px 6px; }
+
+  .hint { color: #7C838B; font-size: 13px; margin: 8px 0 18px; }
+</style>
+
+<header>
+  <h1>Fieldguide</h1>
+  <span class="sub">Tanager-1 hyperspectral similarity — open CC-BY corpus, masked mean-spectrum descriptor (v0)</span>
+  <span class="stats" id="stats"></span>
+</header>
+
+<div class="app">
+  <aside>
+    <canvas id="locator" width="246" height="140"></canvas>
+    <div class="rail-label">Scenes</div>
+    <div id="scene-list"></div>
+  </aside>
+
+  <section class="content">
+    <div id="query-panel">
+      <h2>Spectral lookalikes <span class="h2sub" id="q-title"></span></h2>
+      <div class="qp">
+        <div class="q-side">
+          <img id="q-img" alt="query chip">
+          <div class="q-meta" id="q-meta"></div>
+          <label class="opt"><input type="checkbox" id="excl-scene" checked> exclude query site</label>
+          <label class="opt" id="ranker-row" style="display:none">rank by
+            <select id="ranker" style="background:#1B1E23;color:#E7E5E0;border:1px solid #26292E;border-radius:4px;font:inherit;padding:2px 4px">
+              <option value="fusion">fusion (recommended)</option>
+              <option value="v2">composition (spectral words)</option>
+              <option value="v0">mean spectrum (SAM)</option>
+              <option value="v1">SpectralEarth (cosine)</option>
+            </select>
+          </label>
+        </div>
+        <div>
+          <div class="nb-grid" id="nb-grid"></div>
+          <div class="chartbox">
+            <div class="chart-head">
+              <h2>Mean surface reflectance</h2>
+              <div class="legend">
+                <span><span class="key" style="background:#D95926"></span>query</span>
+                <span><span class="key" style="background:#3987E5"></span>neighbor (hover)</span>
+              </div>
+            </div>
+            <canvas id="chart"></canvas>
+            <div class="chart-note">Gaps are masked bands: deep water-vapor windows, order-sorting-filter seams (651–671, 1277–1307&nbsp;nm), O₂-A (~762&nbsp;nm), and a calibration artifact near 936&nbsp;nm.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h2 id="browse-title">Pick a chip to query</h2>
+    <p class="hint" id="browse-hint">Every 128×128 chip (3.8&nbsp;km at 30&nbsp;m) is described by its full 380–2500&nbsp;nm mean spectrum. Click one to find its spectral lookalikes across the corpus. Amber dots mark chips near open Carbon&nbsp;Mapper CH₄ plume detections.</p>
+    <div class="chip-grid" id="chip-grid"></div>
+  </section>
+</div>
+
+<script type="module">
+const META = __DATA_META__;
+const thumbURL = __THUMB_FN__;
+const SPEC = __DATA_SPEC_EXPR__;
+const SPEC2 = __DATA_SPEC2_EXPR__;  // SpectralEarth token-mean embeddings (384-d) or null
+const D2 = 384;
+const SPEC3 = __DATA_SPEC3_EXPR__;  // spectral-words Hellinger histograms (64-d) or null
+const D3 = 64;
+
+const GRID = META.grid_nm;
+const D = GRID.length;
+// flatten chips; global index matches SPEC rows (scene order = META order)
+const CHIPS = [];
+META.scenes.forEach((s, si) => s.chips.forEach(ch => CHIPS.push({ ...ch, si })));
+const N = CHIPS.length;
+
+// unit vectors for spectral-angle search
+const UNIT = new Float32Array(SPEC.length);
+for (let i = 0; i < N; i++) {
+  let ss = 0;
+  for (let k = 0; k < D; k++) ss += SPEC[i * D + k] ** 2;
+  const inv = 1 / Math.sqrt(ss || 1);
+  for (let k = 0; k < D; k++) UNIT[i * D + k] = SPEC[i * D + k] * inv;
+}
+function samDeg(i, j) {
+  let dot = 0;
+  for (let k = 0; k < D; k++) dot += UNIT[i * D + k] * UNIT[j * D + k];
+  return Math.acos(Math.min(1, Math.max(-1, dot))) * 180 / Math.PI;
+}
+
+function unitize(spec, d) {
+  if (!spec) return null;
+  const u = new Float32Array(spec.length);
+  for (let i = 0; i < N; i++) {
+    let ss = 0;
+    for (let k = 0; k < d; k++) ss += spec[i * d + k] ** 2;
+    const inv = 1 / Math.sqrt(ss || 1);
+    for (let k = 0; k < d; k++) u[i * d + k] = spec[i * d + k] * inv;
+  }
+  return u;
+}
+const UNIT2 = unitize(SPEC2, D2), UNIT3 = unitize(SPEC3, D3);
+function cosOf(u, d, i, j) {
+  let dot = 0;
+  for (let k = 0; k < d; k++) dot += u[i * d + k] * u[j * d + k];
+  return dot;
+}
+// fallback must live outside the real site-id namespace (sites are >= 0)
+const siteOf = ch => META.scenes[ch.si].site !== undefined ? META.scenes[ch.si].site : -1 - ch.si;
+
+// masked-window gaps: consecutive grid points more than 15 nm apart
+const SEGS = [];
+{
+  let seg = [0];
+  for (let k = 1; k < D; k++) {
+    if (GRID[k] - GRID[k - 1] > 15) { SEGS.push(seg); seg = []; }
+    seg.push(k);
+  }
+  SEGS.push(seg);
+}
+
+let curScene = 0, curQuery = null, hovered = null;
+
+const $ = id => document.getElementById(id);
+document.querySelector('#stats').textContent =
+  `${META.scenes.length} scenes · ${N} chips · ${D}-pt spectra`;
+
+// ---- locator ----
+function drawLocator(nbs) {
+  const cv = $('locator'), ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  ctx.fillStyle = '#101216'; ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = '#22262B'; ctx.lineWidth = 1;
+  for (let lon = -180; lon <= 180; lon += 60) {
+    const x = (lon + 180) / 360 * W;
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+  }
+  for (let lat = -60; lat <= 60; lat += 30) {
+    const y = (90 - lat) / 180 * H;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+  const nbScenes = new Set();
+  if (curQuery !== null)
+    (nbs || currentNeighbors()).forEach(n => nbScenes.add(CHIPS[n.j].si));
+  META.scenes.forEach((s, si) => {
+    const x = (s.lon + 180) / 360 * W, y = (90 - s.lat) / 180 * H;
+    ctx.beginPath(); ctx.arc(x, y, si === curScene ? 4.5 : 3, 0, 7);
+    ctx.fillStyle = si === curScene ? '#D95926' : (nbScenes.has(si) ? '#3987E5' : '#6E747C');
+    ctx.fill();
+  });
+}
+
+// ---- scene list ----
+function renderSceneList() {
+  const el = $('scene-list');
+  el.innerHTML = '';
+  META.scenes.forEach((s, si) => {
+    const b = document.createElement('button');
+    b.className = 'scene-card' + (si === curScene ? ' sel' : '');
+    b.innerHTML = `<span class="sc-top"><span class="sc-date">${s.date}</span>` +
+      (s.has_plume_data ? '<span class="badge-ch4">CH₄</span>' : '') +
+      `<span class="sc-n">${s.chips.length} chips</span></span>` +
+      `<span class="sc-loc mono">${fmtLatLon(s.lat, s.lon)} · ${s.time}</span>`;
+    b.onclick = () => { curScene = si; renderSceneList(); renderChipGrid(); drawLocator(); };
+    el.appendChild(b);
+  });
+}
+function fmtLatLon(lat, lon) {
+  return `${Math.abs(lat).toFixed(1)}°${lat < 0 ? 'S' : 'N'} ${Math.abs(lon).toFixed(1)}°${lon < 0 ? 'W' : 'E'}`;
+}
+
+// ---- chip browse grid ----
+function renderChipGrid() {
+  const s = META.scenes[curScene];
+  $('browse-title').textContent = `Scene ${s.scene} — ${s.date}, ${fmtLatLon(s.lat, s.lon)}`;
+  const el = $('chip-grid');
+  el.innerHTML = '';
+  CHIPS.forEach((ch, gi) => {
+    if (ch.si !== curScene) return;
+    const b = document.createElement('button');
+    b.className = 'chip' + (gi === curQuery ? ' q' : '');
+    b.innerHTML = `<img src="${thumbURL(ch.id)}" loading="lazy" alt="">` + (ch.plume ? '<span class="pl"></span>' : '');
+    b.onclick = () => setQuery(gi);
+    el.appendChild(b);
+  });
+}
+
+// ---- query ----
+function currentNeighbors() {
+  const excl = $('excl-scene').checked;
+  const mode = $('ranker').value;
+  const q = curQuery;
+  const cand = [];
+  for (let j = 0; j < N; j++) {
+    if (j === q) continue;
+    if (excl ? siteOf(CHIPS[j]) === siteOf(CHIPS[q]) : CHIPS[j].si === CHIPS[q].si) continue;
+    cand.push(j);
+  }
+  const bySam  = cand.map(j => ({ j, s: samDeg(q, j) })).sort((a, b) => a.s - b.s);
+  const rank = arr => { const r = new Map(); arr.forEach((e, i) => r.set(e.j, i)); return r; };
+  let ordered;
+  if (mode === 'v0' || (!UNIT2 && !UNIT3)) {
+    ordered = bySam;
+  } else if (mode === 'v1' && UNIT2) {
+    ordered = cand.map(j => ({ j, s: cosOf(UNIT2, D2, q, j) })).sort((a, b) => b.s - a.s);
+  } else if (mode === 'v2' && UNIT3) {
+    ordered = cand.map(j => ({ j, s: cosOf(UNIT3, D3, q, j) })).sort((a, b) => b.s - a.s);
+  } else {  // fusion: reciprocal-rank over every available ranking
+    const parts = [rank(bySam)];
+    if (UNIT3) parts.push(rank(cand.map(j => ({ j, s: cosOf(UNIT3, D3, q, j) })).sort((a, b) => b.s - a.s)));
+    if (UNIT2) parts.push(rank(cand.map(j => ({ j, s: cosOf(UNIT2, D2, q, j) })).sort((a, b) => b.s - a.s)));
+    ordered = cand.map(j => ({ j, s: parts.reduce((t, r) => t + 1 / (60 + r.get(j)), 0) }))
+                  .sort((a, b) => b.s - a.s);
+  }
+  // diversity: at most 2 chips per scene in the top-12
+  const perScene = new Map(), out = [], samOf = new Map(bySam.map(e => [e.j, e.s]));
+  for (const { j } of ordered) {
+    const si = CHIPS[j].si, n = perScene.get(si) || 0;
+    if (n >= 2) continue;
+    perScene.set(si, n + 1);
+    out.push({ j, sam: samOf.get(j) });
+    if (out.length === 12) break;
+  }
+  return out;
+}
+
+function setQuery(gi) {
+  curQuery = gi;
+  hovered = null;
+  const ch = CHIPS[gi], s = META.scenes[ch.si];
+  $('query-panel').className = 'on';
+  $('q-img').src = thumbURL(ch.id);
+  $('q-title').textContent = `for ${ch.id}`;
+  $('q-meta').innerHTML =
+    `<b>${s.date}</b> ${s.time}<br>${fmtLatLon(ch.lat, ch.lon)}<br>` +
+    `valid ${(100 * (1 - ch.bad_frac)).toFixed(0)}%` +
+    (ch.cls ? ` · ${ch.cls}` : '') +
+    (ch.plume ? '<br><span class="badge-ch4">near CH₄ plume</span>' : '');
+  renderNeighbors();
+  renderChipGrid();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function renderNeighbors() {
+  hovered = null;
+  const el = $('nb-grid');
+  el.innerHTML = '';
+  const nbs = currentNeighbors();
+  nbs.forEach(({ j, sam }) => {
+    const ch = CHIPS[j], s = META.scenes[ch.si];
+    const b = document.createElement('button');
+    b.className = 'nb';
+    b.innerHTML = `<img src="${thumbURL(ch.id)}" loading="lazy" alt="">` +
+      `<div class="nb-sam">SAM ${sam.toFixed(2)}°${ch.plume ? ' <span class="badge-ch4">CH₄</span>' : ''}</div>` +
+      `<div class="nb-meta mono">${s.date} · ${ch.cls || ''}<br>${fmtLatLon(ch.lat, ch.lon)}</div>`;
+    b.onmouseenter = () => { hovered = j; b.classList.add('hov'); drawChart(); };
+    b.onmouseleave = () => { hovered = null; b.classList.remove('hov'); drawChart(); };
+    b.onclick = () => { curScene = CHIPS[j].si; renderSceneList(); setQuery(j); };
+    el.appendChild(b);
+  });
+  drawChart();
+  drawLocator(nbs);
+}
+document.addEventListener('change', e => {
+  if (e.target.id === 'excl-scene' || e.target.id === 'ranker') renderNeighbors();
+});
+if (UNIT2 || UNIT3) {
+  $('ranker-row').style.display = 'flex';
+  if (!UNIT2) $('ranker').querySelector('option[value="v1"]').remove();
+  if (!UNIT3) $('ranker').querySelector('option[value="v2"]').remove();
+}
+
+// ---- spectra chart ----
+let mouseK = null;
+function chartGeom(cv) {
+  // CSS-pixel geometry; drawChart's P() is the only dpr multiplier
+  const pad = { l: 46, r: 12, t: 10, b: 26 };
+  return { pad, w: cv.clientWidth - pad.l - pad.r, h: 240 - pad.t - pad.b };
+}
+function drawChart() {
+  const cv = $('chart');
+  const dpr = window.devicePixelRatio || 1;
+  cv.width = cv.clientWidth * dpr; cv.height = 240 * dpr;
+  const ctx = cv.getContext('2d');
+  const { pad, w, h } = chartGeom(cv);
+  const P = v => v * dpr;
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  if (curQuery === null) return;
+
+  const rows = [curQuery]; if (hovered !== null) rows.push(hovered);
+  let ymax = 0;
+  rows.forEach(i => { for (let k = 0; k < D; k++) ymax = Math.max(ymax, SPEC[i * D + k]); });
+  ymax = ymax * 1.06 || 1;
+  const X = k => pad.l + (GRID[k] - 400) / (2450 - 400) * w;
+  const Y = v => pad.t + h - v / ymax * h;
+
+  // recessive grid + axes text
+  ctx.lineWidth = P(1); ctx.strokeStyle = '#22262B';
+  ctx.fillStyle = '#7C838B';
+  ctx.font = `${P(10)}px ui-monospace, Menlo, monospace`;
+  ctx.textAlign = 'center';
+  [500, 1000, 1500, 2000, 2400].forEach(nm => {
+    const x = P(pad.l + (nm - 400) / 2050 * w);
+    ctx.beginPath(); ctx.moveTo(x, P(pad.t)); ctx.lineTo(x, P(pad.t + h)); ctx.stroke();
+    ctx.fillText(nm, x, P(pad.t + h + 16));
+  });
+  ctx.textAlign = 'right';
+  for (let i = 0; i <= 2; i++) {
+    const v = ymax * i / 2, y = P(Y(v));
+    ctx.beginPath(); ctx.moveTo(P(pad.l), y); ctx.lineTo(P(pad.l + w), y); ctx.stroke();
+    ctx.fillText(v.toFixed(2), P(pad.l - 6), y + P(3));
+  }
+
+  // masked-window bands behind data
+  ctx.fillStyle = 'rgba(124,131,139,0.10)';
+  for (let g = 0; g < SEGS.length - 1; g++) {
+    const a = GRID[SEGS[g][SEGS[g].length - 1]], b = GRID[SEGS[g + 1][0]];
+    ctx.fillRect(P(pad.l + (a - 400) / 2050 * w), P(pad.t), P((b - a) / 2050 * w), P(h));
+  }
+
+  // series: 2px lines, broken at masked gaps
+  const colors = ['#D95926', '#3987E5'];
+  rows.forEach((i, ri) => {
+    ctx.strokeStyle = colors[ri]; ctx.lineWidth = P(2);
+    SEGS.forEach(seg => {
+      ctx.beginPath();
+      seg.forEach((k, n) => {
+        const x = P(X(k)), y = P(Y(SPEC[i * D + k]));
+        n ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+      });
+      ctx.stroke();
+    });
+  });
+
+  // crosshair + tooltip
+  if (mouseK !== null) {
+    const x = P(X(mouseK));
+    ctx.strokeStyle = '#4A5058'; ctx.lineWidth = P(1);
+    ctx.beginPath(); ctx.moveTo(x, P(pad.t)); ctx.lineTo(x, P(pad.t + h)); ctx.stroke();
+    const lines = [`${GRID[mouseK].toFixed(0)} nm`];
+    rows.forEach((i, ri) => lines.push(`${ri ? 'nbr' : 'qry'} ${SPEC[i * D + mouseK].toFixed(3)}`));
+    ctx.font = `${P(11)}px ui-monospace, Menlo, monospace`;
+    const tw = Math.max(...lines.map(t => ctx.measureText(t).width)) + P(14);
+    const tx = Math.min(x + P(8), cv.width - tw - P(4));
+    ctx.fillStyle = 'rgba(16,18,22,0.92)';
+    ctx.fillRect(tx, P(pad.t + 4), tw, P(14 * lines.length + 8));
+    lines.forEach((t, n) => {
+      ctx.fillStyle = n === 0 ? '#C9CDD2' : colors[n - 1];
+      ctx.textAlign = 'left';
+      ctx.fillText(t, tx + P(7), P(pad.t + 4 + 14 * (n + 1)));
+    });
+    rows.forEach((i, ri) => {
+      ctx.beginPath();
+      ctx.arc(x, P(Y(SPEC[i * D + mouseK])), P(3.5), 0, 7);
+      ctx.fillStyle = colors[ri]; ctx.fill();
+    });
+  }
+}
+$('chart').addEventListener('mousemove', e => {
+  const cv = $('chart'), rect = cv.getBoundingClientRect();
+  const { pad, w } = chartGeom(cv);
+  const nm = 400 + (e.clientX - rect.left - pad.l) / w * 2050;
+  let best = 0, bd = 1e9;
+  for (let k = 0; k < D; k++) {
+    const d = Math.abs(GRID[k] - nm);
+    if (d < bd) { bd = d; best = k; }
+  }
+  mouseK = best; drawChart();
+});
+$('chart').addEventListener('mouseleave', () => { mouseK = null; drawChart(); });
+window.addEventListener('resize', drawChart);
+
+// ---- boot: preselect first plume chip (or chip 0) so the page opens live ----
+renderSceneList();
+drawLocator();
+{
+  let start = CHIPS.findIndex(c => c.plume);
+  if (start < 0) start = 0;
+  if (N) { curScene = CHIPS[start].si; renderSceneList(); renderChipGrid(); setQuery(start); }
+}
+</script>

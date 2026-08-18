@@ -1,0 +1,9 @@
+data/
+.venv/
+build/
+site/
+__pycache__/
+.DS_Store
+v1_assets/
+.venv-ml/
+list.txt
