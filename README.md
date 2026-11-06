@@ -9,7 +9,7 @@ anything about *what the ground is made of*. Fieldguide closes that gap: click
 any chip in any scene and it returns the spectrally most similar chips across
 the entire open archive, with both full spectra overlaid.
 
-### ▶ [Live demo](https://planetrahil.github.io/tan-fieldguide/)
+### ▶ [Live demo](https://rahillasne.github.io/tan-fieldguide/)
 
 149 scenes · 3,558 chips · runs entirely in your browser, nothing to install,
 no server and no vector database.
